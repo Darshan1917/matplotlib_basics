@@ -1,0 +1,74 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb  9 21:34:49 2018
+
+@author: dumapath
+"""
+
+import datasource as ds
+
+# Directly an in-memory string
+>>> data = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+>>> source = ds.DataSource(data)
+>>> print source.is_loaded, source.size()
+True 26
+>>> reader = source.get_reader()
+>>> print reader.read()
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+# A string as a filepath: absolute path, relative path or path defined with "file://"
+>>> filepath = 'tests/data/afile.txt'
+>>> source = ds.DataSource(filepath)
+>>> print source.is_loaded, source.size()
+True 26
+>>> reader = source.get_reader()
+>>> print reader.read()
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+# A string as a filepath: use is_file to make sure it is considered as a file to raise an Error if the file does not exist
+>>> filepath = 'file_does_not_exist.txt'
+>>> try:
+...     source = ds.DataSource(filepath, is_file=True)
+... except Exception as e:
+...     print e
+File not found: file_does_not_exist.txt
+
+# A callable
+>>> f = lambda: (chr(c) for c in xrange(65, 91))
+>>> callable(f)
+True
+>>> source = ds.DataSource(f)
+>>> print source.is_loaded, source.size()  # A DataSource is lazy by default so it is not loaded yet
+False 0
+>>> reader = source.get_reader()  # get_reader triggers data loading
+>>> print source.is_loaded, source.size()
+True 26
+>>> print reader.read()
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+>>> source = ds.DataSource(f, preload=True)  # Set preload to True to load the data at the creation
+>>> print source.is_loaded, source.size()
+True 26
+
+# A generator
+>>> gen = (chr(c) for c in xrange(65, 91))
+>>> type(gen)
+<type 'generator'>
+>>> source = ds.DataSource(gen)
+>>> print source.size(force_load=True), source.is_loaded  # A DataSource is lazy so use force_load to make sure it is loaded
+26 True
+>>> reader = source.get_reader()
+>>> print source.is_loaded, source.size()
+True 26
+>>> print reader.read()
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+
+# An URL
+>>> url = 'https://bitbucket.org/YAmikep/datasource/raw/master/tests/data/afile.txt'
+>>> source = ds.DataSource(url)
+>>> print source.is_loaded, source.size()  # A DataSource is lazy by default
+False 0
+>>> reader = source.get_reader()  # get_reader triggers data loading
+>>> print source.is_loaded, source.size()
+True 26
+>>> print reader.read()
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
